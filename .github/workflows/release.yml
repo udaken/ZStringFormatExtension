@@ -4,6 +4,7 @@ on:
   push:
     tags:
       - 'v*'
+  workflow_dispatch:
 
 jobs:
   build:
@@ -27,5 +28,13 @@ jobs:
     - name: Test
       run: dotnet test --no-restore --verbosity normal
 
+    - name: Extract tag name
+      id: tag
+      uses: actions/github-script@0.2.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          return context.payload.ref.replace(/\/refs\/tags\/v/, '');
+
     - name: Packaging
-      run: dotnet pack --include-symbols  --configuration Release -p:PackageVersion=${{ github.ref }}
+      run: dotnet pack --include-symbols  --configuration Release -p:PackageVersion=${{ steps.tag.outputs.result }}

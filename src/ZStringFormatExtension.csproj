@@ -2,6 +2,8 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <RepositoryUrl>https://github.com/udaken/ZStringFormatExtension</RepositoryUrl>
+    <Authors>udaken</Authors>
   </PropertyGroup>
 
   <ItemGroup>
@@ -13,7 +15,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="ZString" Version="2.1.3" />
+    <PackageReference Include="CenterCLR.RelaxVersioner" Version="1.0.10">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+    </PackageReference>
+    <PackageReference Include="ZString" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

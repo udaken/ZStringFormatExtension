@@ -1,0 +1,56 @@
+﻿using System;
+using System.Buffers;
+
+using Cysharp.Text;
+
+
+namespace ZStringFormatExtension
+{
+    public static partial class FormatExtension
+    {
+        public static void RegisterIntPtr()
+        {
+<# foreach(var U in new []{"", "U"}){ #>
+            Utf8ValueStringBuilder.RegisterTryFormat<<#= U #>IntPtr>(TryFormat);
+            Utf16ValueStringBuilder.RegisterTryFormat<<#= U #>IntPtr>(TryFormat);
+<# } #>
+        }
+<# foreach(var U in new []{"", "U"}){ #>
+
+        static bool TryFormat(<#= U #>IntPtr value, Span<byte> destination, out int written, StandardFormat _)
+        {
+            Span<char> utf16 = stackalloc char[64];
+            int utf16len;
+            if (System.IntPtr.Size == 4)
+            {
+                if (!value.To<#= U #>Int32().TryFormat(utf16, out utf16len))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+            else
+            {
+                if (!value.To<#= U #>Int64().TryFormat(utf16, out utf16len))
+                {
+                    written = 0;
+                    return false;
+                }
+            }
+
+            var utf8len = utf8encoding.GetByteCount(utf16);
+            written = utf8encoding.GetBytes(utf16.Slice(0, utf16len), destination);
+            return true;
+        }
+
+        static bool TryFormat(<#= U #>IntPtr value, Span<char> destination, out int charsWritten, ReadOnlySpan<char> _)
+        {
+            if (System.IntPtr.Size == 4)
+                return value.To<#= U #>Int32().TryFormat(destination, out charsWritten);
+            else
+                return value.To<#= U #>Int64().TryFormat(destination, out charsWritten);
+        }
+
+<# } #>
+    }
+}

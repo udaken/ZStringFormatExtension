@@ -1,0 +1,68 @@
+﻿<#@ template debug="true" hostspecific="false" language="C#" #>
+<#@ assembly name="System.Core" #>
+<#@ assembly name="System.Numerics" #>
+<#@ assembly name="System.Net" #>
+<#@ import namespace="System" #>
+<#@ import namespace="System.Linq" #>
+<#@ import namespace="System.Text" #>
+<#@ import namespace="System.Collections.Generic" #>
+<#@ output extension=".cs" #>
+<#
+    var formattableTypes = new [] {
+        (type: typeof(System.Net.IPAddress), format: false),
+        (type: typeof(System.Net.IPEndPoint), format: false),
+        (type: typeof(System.Numerics.BigInteger), format: true),
+        (type: typeof(Version), format: false),
+    };
+#>
+
+using System;
+using System.Buffers;
+using System.Text;
+
+using Cysharp.Text;
+
+namespace ZStringFormatExtension
+{
+    public static partial class FormatExtension
+    {
+        private static void RegisterUtf8Adaptor()
+        {
+#if !NETSTANDARD2_0
+<# foreach(var t in formattableTypes) { #>
+            Utf8ValueStringBuilder.RegisterTryFormat<<#= t.type #>>(TryFormat);
+<# } #>
+#endif
+        }
+
+#if !NETSTANDARD2_0
+<# foreach(var t in formattableTypes) { #>
+        static bool TryFormat(<#= t.type #> value, Span<byte> destination, out int written, StandardFormat format)
+        {
+            int buflen = 256;
+            Span<char> utf16 = stackalloc char[buflen];
+            int utf16len;
+            do
+            {
+                utf16 = stackalloc char[buflen];
+                if (value.TryFormat(utf16, out utf16len<#= t.format ? ", format.ToString()" : "" #>))
+                {
+                    break;
+                }
+                buflen *= 2;
+            }while(buflen <= 64 * 1024);
+
+            if(utf16len == 0)
+            {
+                written = 0;
+                return false;
+            }
+
+            var utf8len = utf8encoding.GetByteCount(utf16);
+            written = utf8encoding.GetBytes(utf16.Slice(0, utf16len), destination);
+            return true;
+        }
+<# } #>
+#endif
+    }
+}

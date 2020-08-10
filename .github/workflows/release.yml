@@ -4,15 +4,24 @@ on:
   push:
     tags:
       - 'v*'
-  workflow_dispatch:
 
 jobs:
   build:
 
     runs-on: ubuntu-latest
+    env:
+      DOTNET_NOLOGO: true
 
     steps:
     - uses: actions/checkout@v2
+
+    - name: Extract tag name
+      id: tag
+      uses: actions/github-script@0.2.0
+      with:
+        github-token: ${{ secrets.GITHUB_TOKEN }}
+        script: |
+          return context.payload.ref.replace(/\/refs\/tags\/v/, '');
 
     - name: Setup .NET Core
       uses: actions/setup-dotnet@v1
@@ -27,14 +36,6 @@ jobs:
 
     - name: Test
       run: dotnet test --no-restore --verbosity normal
-
-    - name: Extract tag name
-      id: tag
-      uses: actions/github-script@0.2.0
-      with:
-        github-token: ${{ secrets.GITHUB_TOKEN }}
-        script: |
-          return context.payload.ref.replace(/\/refs\/tags\/v/, '');
 
     - name: Packaging
       run: dotnet pack --include-symbols  --configuration Release -p:PackageVersion=${{ steps.tag.outputs.result }}
